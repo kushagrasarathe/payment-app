@@ -26,3 +26,19 @@ export const CHAIN_IDS = {
   arbitrum: arbitrum.id,
   polygon: polygon.id,
 } as const;
+
+// reverse mapping of chain IDs to names
+export const CHAIN_ID_TO_NAME = {
+  [CHAIN_IDS.mainnet]: "Ethereum",
+  [CHAIN_IDS.optimism]: "Optimism",
+  [CHAIN_IDS.arbitrum]: "Arbitrum",
+  [CHAIN_IDS.polygon]: "Polygon",
+} as const;
+
+// mapping of chain names to IDs
+export const CHAIN_NAME_TO_ID = {
+  ethereum: CHAIN_IDS.mainnet,
+  optimism: CHAIN_IDS.optimism,
+  arbitrum: CHAIN_IDS.arbitrum,
+  polygon: CHAIN_IDS.polygon,
+} as const;

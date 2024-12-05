@@ -1,6 +1,7 @@
 import peanut from "@squirrel-labs/peanut-sdk";
+import { BigNumber } from "ethers";
 import { useState } from "react";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
 interface ProcessPaymentResult {
   isLoading: boolean;
@@ -10,7 +11,8 @@ interface ProcessPaymentResult {
 
 export function useProcessPayment() {
   const { address } = useAccount();
-  const { data: signer } = useWalletClient();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
   const [result, setResult] = useState<ProcessPaymentResult>({
     isLoading: false,
@@ -18,10 +20,67 @@ export function useProcessPayment() {
     txHash: null,
   });
 
-  const fulfillPayment = async (paymentLink: string) => {
-    console.log("Starting payment fulfillment with link:", paymentLink);
+  const createStructuredSigner = async (client: any, chainId: string) => {
+    // Convert chainId to number if it's a string
+    const numericChainId = Number(chainId);
 
-    if (!signer || !address) {
+    return {
+      provider: publicClient,
+      chainId: numericChainId, // Explicitly set the chainId from the payment details
+      account: client.account,
+      signer: {
+        ...client,
+        getAddress: async () => client.account.address,
+        // Add chainId to the transaction
+        signTransaction: async (tx: any) => {
+          return client.signTransaction({
+            ...tx,
+            chainId: numericChainId,
+          });
+        },
+        sendTransaction: async (tx: any) => {
+          const hash = await client.sendTransaction({
+            ...tx,
+            chainId: numericChainId,
+          });
+          return {
+            hash,
+            wait: async () => {
+              await publicClient?.waitForTransactionReceipt({ hash });
+              return { hash };
+            },
+          };
+        },
+      },
+      gasLimit: BigNumber.from(2_000_000),
+    };
+  };
+
+  const fulfillPayment = async (paymentLink: string) => {
+    let peanutLink = paymentLink;
+
+    if (
+      paymentLink.includes("localhost:3000") ||
+      paymentLink.includes(process.env.NEXT_PUBLIC_APP_URL || "")
+    ) {
+      try {
+        const url = new URL(paymentLink);
+        const requestId = url.searchParams.get("id");
+        if (requestId) {
+          peanutLink = `https://peanut.to/request/pay?id=${requestId}`;
+        }
+      } catch (error) {
+        console.error("Error parsing URL:", error);
+        setResult({
+          isLoading: false,
+          error: "Invalid payment link format",
+          txHash: null,
+        });
+        return;
+      }
+    }
+
+    if (!walletClient || !address) {
       setResult({
         isLoading: false,
         error: "Please connect your wallet",
@@ -37,16 +96,19 @@ export function useProcessPayment() {
     });
 
     try {
-      // get payment request details
-      console.log("Fetching link details...");
+      // Get payment request details first
       const linkDetails = await peanut.getRequestLinkDetails({
-        link: paymentLink,
+        link: peanutLink,
         APIKey: process.env.NEXT_PUBLIC_PEANUT_API_KEY!,
       });
-      console.log("Received link details:", linkDetails);
 
-      // prepare tx
-      console.log("Preparing unsigned transaction...");
+      // Create the structured signer with the correct chain ID
+      const structSigner = await createStructuredSigner(
+        walletClient,
+        linkDetails.chainId
+      );
+
+      // Prepare the transaction
       const { unsignedTx } = peanut.prepareRequestLinkFulfillmentTransaction({
         recipientAddress: linkDetails.recipientAddress!,
         tokenAddress: linkDetails.tokenAddress,
@@ -54,28 +116,21 @@ export function useProcessPayment() {
         tokenDecimals: linkDetails.tokenDecimals,
         tokenType: peanut.interfaces.EPeanutLinkType.erc20,
       });
-      console.log("Prepared unsigned transaction:", unsignedTx);
 
-      console.log("Signing and submitting transaction...");
+      // Sign and submit the transaction
       const { tx, txHash } = await peanut.signAndSubmitTx({
         unsignedTx,
-        structSigner: {
-          signer: signer as any,
-        },
+        structSigner,
       });
 
-      console.log("Transaction submitted with hash:", txHash);
-
-      console.log("Waiting for transaction confirmation...");
       await tx.wait();
-      console.log("Transaction confirmed!");
 
-      console.log("Submitting fulfillment details...");
+      // Submit the fulfillment details
       await peanut.submitRequestLinkFulfillment({
         chainId: linkDetails.chainId,
         hash: txHash,
         payerAddress: address,
-        link: paymentLink,
+        link: peanutLink,
         amountUsd: "",
       });
 
@@ -84,14 +139,18 @@ export function useProcessPayment() {
         error: null,
         txHash,
       });
-
-      console.log("Payment fulfillment completed successfully!");
     } catch (error) {
       console.error("Full error object:", error);
 
       let errorMessage = "Failed to fulfill payment";
       if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.message.includes("user rejected")) {
+          errorMessage = "Transaction was rejected by the wallet";
+        } else if (error.message.includes("insufficient funds")) {
+          errorMessage = "Insufficient funds to complete the transaction";
+        } else {
+          errorMessage = error.message;
+        }
       }
 
       setResult({
