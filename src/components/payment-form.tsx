@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { usePaymentLink } from "@/hooks/usePaymentLink";
 import {
   paymentFormSchema,
   TPaymentFormValues,
@@ -28,6 +29,8 @@ import { useForm } from "react-hook-form";
 import { Card, CardContent } from "./ui/card";
 
 export function PaymentForm() {
+  const { generateLink, link, isLoading, error } = usePaymentLink();
+
   const form = useForm<TPaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
@@ -41,7 +44,7 @@ export function PaymentForm() {
 
   const onSubmit = async (data: TPaymentFormValues) => {
     try {
-      console.log("form data", data);
+      await generateLink(data);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -157,7 +160,7 @@ export function PaymentForm() {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="usdc">USDC</SelectItem>
-                  <SelectItem value="usdt">USDT</SelectItem>
+                  {/* <SelectItem value="usdt">USDT</SelectItem> */}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -165,7 +168,27 @@ export function PaymentForm() {
           )}
         />
 
-        <Button type="submit">Generate Payment Link</Button>
+        {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+
+        {link && (
+          <div className="mt-6 space-y-2">
+            <h3 className="text-lg font-medium">Payment Link Generated</h3>
+            <div className="flex items-center gap-2">
+              <Input readOnly value={link} className="font-mono" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(link)}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <Button className="w-full" type="submit" disabled={isLoading}>
+          {isLoading ? "Generating..." : "Generate Payment Link"}
+        </Button>
       </form>
     </Form>
   );
