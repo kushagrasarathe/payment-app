@@ -1,9 +1,9 @@
 import { PaymentForm } from "@/components/payment-form";
-import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="p-20">
+    <div className="flex items-start md:items-stretch flex-col gap-4 justify-center min-h-screen">
+      <h1 className="text-2xl font-bold">Generate Payment Links</h1>
       <PaymentForm />
     </div>
   );

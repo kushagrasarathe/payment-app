@@ -26,13 +26,6 @@ export function usePaymentLink() {
     setResult({ link: "", isLoading: true, error: null });
 
     try {
-      //create a simple req
-      if (!formData.amount) {
-        const simpleReq = generateSimpleLink(formData);
-        setResult({ link: simpleReq, isLoading: false, error: null });
-        return;
-      }
-
       const chainId = CHAIN_IDS[formData.chain || "optimism"].toString();
       const tokenAddress = TOKEN_ADDRESSES[formData.chain || "optimism"].usdc;
 
@@ -40,14 +33,18 @@ export function usePaymentLink() {
       const { link } = await peanut.createRequestLink({
         chainId,
         tokenAddress,
-        tokenAmount: formData.amount,
+        tokenAmount: formData.amount || "10",
         tokenType: peanut.interfaces.EPeanutLinkType.erc20,
         tokenDecimals: TOKEN_DECIMALS.usdc.toString(),
         recipientAddress: formData.recipient,
         APIKey: peanutApiKey,
       });
 
-      setResult({ link, isLoading: false, error: null });
+      const peanutUrl = new URL(link);
+      const requestId = peanutUrl.searchParams.get("id");
+      const normalizedUrl = `${process.env.NEXT_PUBLIC_APP_URL}/pay?id=${requestId}`;
+
+      setResult({ link: normalizedUrl, isLoading: false, error: null });
     } catch (error) {
       let errorMessage = "Failed to generate payment link";
       if (error instanceof Error) {
@@ -64,26 +61,3 @@ export function usePaymentLink() {
     generateLink,
   };
 }
-
-//  generate simple links without sdk
-const generateSimpleLink = (formData: TPaymentFormValues): string => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
-
-  const params = ["pay", formData.recipient];
-
-  if (formData.isAdvancedMode) {
-    if (formData.chain) {
-      params.push(formData.chain);
-    }
-    if (formData.amount) {
-      params.push(formData.amount);
-      params.push("usdc");
-    }
-  } else if (formData.amount) {
-    params.push(`${formData.amount}usdc`);
-  }
-
-  return `${baseUrl}/${params.join("/")}`;
-};
