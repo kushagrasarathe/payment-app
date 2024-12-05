@@ -1,5 +1,29 @@
 # Peanut Pay App
 
+## Thought Process
+
+Wanted to follow good code practices while keeping the ui minimalistic, so spent some time in setting up tools like `react-hook-form`, `zod`, created custom hooks for payment request generation `usePaymentLink` and payment processing `useProcessPayment`. And separate components like `PaymentForm` and `ProcessPayment`
+
+The payment process functionality is not yet complete, the current implementation has integration errors based on the sdk.
+
+### Tech Used
+
+1. Opted for local state management using React hooks instead of going with Redux, why?
+
+- to keep the implementation simpler
+- makes components more self-contained
+- will need reconsideration if the application grows significantly
+
+2. `react-hook-form` for form handling and `zod` for form validation
+3. Used ShacnUI for quick ui components
+
+## Development Challenges
+
+during development, I encountered some stupidly simply yet annyoing bugs:
+
+1. **ENS Resolution**: ENS names handling
+2. **SDK URL processing**: got stuck in errors while processing the generated payment links through the sdk to process the payment
+
 ### Task Requirements
 
 - parse and handle various url formats
@@ -7,40 +31,3 @@
 - mobile-first and good ui
 - payment functionality using the peanut sdk
 - support cross-chain payments ( additional task )
-
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
