@@ -16,3 +16,10 @@ export const config = createConfig({
     [polygon.id]: http(),
   },
 });
+
+export const resolveAddress = (address: `0x${string}`) => {
+  const ensName = publicClient.getEnsName({
+    address,
+  });
+  return ensName;
+};
