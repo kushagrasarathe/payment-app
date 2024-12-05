@@ -1,3 +1,13 @@
+# Peanut Pay App
+
+### Task Requirements
+
+- parse and handle various url formats
+- support ens names
+- mobile-first and good ui
+- payment functionality using the peanut sdk
+- support cross-chain payments ( additional task )
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

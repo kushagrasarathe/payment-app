@@ -11,6 +11,8 @@
     "prepare": "npx husky"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.1.0",
+    "@tanstack/react-query": "^5.62.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",
@@ -18,7 +20,9 @@
     "react": "19.0.0-rc-02c0e824-20241028",
     "react-dom": "19.0.0-rc-02c0e824-20241028",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "viem": "^2.21.54",
+    "wagmi": "^2.13.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",
