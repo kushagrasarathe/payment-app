@@ -90,7 +90,7 @@ export function useProcessPayment() {
         hash: txHash,
         payerAddress: address,
         link: peanutLink,
-        amountUsd: "",
+        amountUsd: linkDetails.tokenAmount,
       });
 
       setResult({
