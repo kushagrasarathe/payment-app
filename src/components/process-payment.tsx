@@ -204,7 +204,7 @@ export function ProcessPayment({
 
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 rounded-lg">
+            <div className="p-4 bg-red-50 rounded-lg break-words">
               <p className="text-sm text-red-500">{error}</p>
             </div>
           )}

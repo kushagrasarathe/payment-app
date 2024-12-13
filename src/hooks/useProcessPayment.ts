@@ -1,5 +1,4 @@
 import peanut from "@squirrel-labs/peanut-sdk";
-import { BigNumber } from "ethers";
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
@@ -19,42 +18,6 @@ export function useProcessPayment() {
     error: null,
     txHash: null,
   });
-
-  const createStructuredSigner = async (client: any, chainId: string) => {
-    // Convert chainId to number if it's a string
-    const numericChainId = Number(chainId);
-
-    return {
-      provider: publicClient,
-      chainId: numericChainId, // Explicitly set the chainId from the payment details
-      account: client.account,
-      signer: {
-        ...client,
-        getAddress: async () => client.account.address,
-        // Add chainId to the transaction
-        signTransaction: async (tx: any) => {
-          return client.signTransaction({
-            ...tx,
-            chainId: numericChainId,
-          });
-        },
-        sendTransaction: async (tx: any) => {
-          const hash = await client.sendTransaction({
-            ...tx,
-            chainId: numericChainId,
-          });
-          return {
-            hash,
-            wait: async () => {
-              await publicClient?.waitForTransactionReceipt({ hash });
-              return { hash };
-            },
-          };
-        },
-      },
-      gasLimit: BigNumber.from(2_000_000),
-    };
-  };
 
   const fulfillPayment = async (paymentLink: string) => {
     let peanutLink = paymentLink;
@@ -102,12 +65,6 @@ export function useProcessPayment() {
         APIKey: process.env.NEXT_PUBLIC_PEANUT_API_KEY!,
       });
 
-      // Create the structured signer with the correct chain ID
-      const structSigner = await createStructuredSigner(
-        walletClient,
-        linkDetails.chainId
-      );
-
       // Prepare the transaction
       const { unsignedTx } = peanut.prepareRequestLinkFulfillmentTransaction({
         recipientAddress: linkDetails.recipientAddress!,
@@ -117,13 +74,15 @@ export function useProcessPayment() {
         tokenType: peanut.interfaces.EPeanutLinkType.erc20,
       });
 
-      // Sign and submit the transaction
-      const { tx, txHash } = await peanut.signAndSubmitTx({
-        unsignedTx,
-        structSigner,
+      const txHash = await walletClient.sendTransaction({
+        to: unsignedTx.to as `0x${string}`,
+        value: unsignedTx.value as bigint,
+        data: unsignedTx.data as `0x${string}`,
       });
 
-      await tx.wait();
+      await publicClient?.waitForTransactionReceipt({
+        hash: txHash,
+      });
 
       // Submit the fulfillment details
       await peanut.submitRequestLinkFulfillment({
